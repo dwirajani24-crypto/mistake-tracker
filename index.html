@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f7f3ff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Mistakes Tracker">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<title>A-Level Mistakes Tracker</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{--bg:#f8f7fc;--card:#ffffffd9;--ink:#29263d;--muted:#77738c;--purple:#7c6ee6;--border:#e9e6f2}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}body{margin:0;background:radial-gradient(circle at top left,#eee9ff,transparent 30rem),var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;padding-bottom:env(safe-area-inset-bottom)}button,input,textarea{font:inherit}button{touch-action:manipulation}.card{background:var(--card);border:1px solid #fff;box-shadow:0 12px 35px #3d316814;backdrop-filter:blur(14px)}.tab.active{background:#fff;color:#5d4ed2;box-shadow:0 5px 15px #5d4ed21f}.input{width:100%;padding:.7rem .8rem;border:1px solid var(--border);border-radius:.9rem;background:#fff;outline:none}.input:focus{border-color:#a89df0;box-shadow:0 0 0 4px #7c6ee61a}.score{display:inline-flex;align-items:center;justify-content:center;min-width:58px;padding:.35rem .65rem;border-radius:999px;font-weight:700;font-size:.82rem}.red{color:#9f3e3e;background:#e573732b;box-shadow:0 0 16px #e5737324}.orange{color:#9b5d18;background:#f3a65a30}.green{color:#276a40;background:#70b98b2e}.dark{color:#1d5f3c;background:#3f8a6129}.gold{color:#87680e;background:#d5a72f33}.empty{color:#8d899d;background:#f3f1f7}.scroll{overflow-x:auto}table{border-collapse:separate;border-spacing:0 .5rem;min-width:700px;width:100%}th{text-align:left;font-size:.72rem;color:var(--muted);text-transform:uppercase;padding:.45rem .6rem}td{background:#ffffffc7;padding:.55rem .6rem;border-top:1px solid #f0edf5;border-bottom:1px solid #f0edf5}td:first-child{border-left:1px solid #f0edf5;border-radius:.85rem 0 0 .85rem}td:last-child{border-right:1px solid #f0edf5;border-radius:0 .85rem .85rem 0}@media(max-width:640px){.summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+<div id="app"></div><input id="importInput" type="file" accept=".json" hidden>
+<script>
+const SUBJECTS = {
+  "A-Level Maths (Year 12)": {
+    "Autumn Term 1": [
+      "Pure: Differentiation",
+      "Pure: Integration",
+      "Applied: Modelling",
+      "Applied: SUVAT"
+    ],
+    "Autumn Term 2": [
+      "Pure: Vectors 1 & 2",
+      "Pure: Sine Rule & Cosine Rule",
+      "Applied: Forces & Motion",
+      "Applied: Variable Acceleration"
+    ],
+    "Summer Term 1": [
+      "Pure: Vectors",
+      "Pure: Differentiation",
+      "Further Mechanics/Statistics: Discrete random variables"
+    ],
+    "Summer Term 2": [
+      "Pure: Integration",
+      "Further Mechanics/Statistics: Poisson distribution"
+    ]
+  },
+  "A-Level Maths (Year 13)": {
+    "Autumn Term 1": [
+      "Pure: Trigonometric functions",
+      "Pure: Differentiation",
+      "Pure: Binomial expansion",
+      "Applied: Moments",
+      "Applied: Forces & Friction"
+    ],
+    "Autumn Term 1 (Further)": [
+      "Core Pure 2: Complex Numbers 2",
+      "Core Pure 2: Series Methods in calculus",
+      "Further Statistics 1: Geometric & negative binomial",
+      "Further Statistics 1: Hypothesis testing"
+    ],
+    "Autumn Term 2": [
+      "Pure: Parametric Equations",
+      "Pure: Integration",
+      "Applied: Projectiles",
+      "Applied: Normal distribution"
+    ],
+    "Spring Term 1": [
+      "Pure: Trigonometry & Modelling",
+      "Pure: Sequences & Series",
+      "Applied: Normal distribution",
+      "Applied: Application of forces"
+    ],
+    "Spring Term 2": [
+      "Pure: Numerical methods",
+      "Applied: Further kinematics"
+    ]
+  },
+  "A-Level Economics": {
+    "Weeks 1–15": [
+      "1.1 Nature of Economics",
+      "1.2 How markets work (rational/irrational behaviour, essentials of the market model, elasticity, welfare and surplus)",
+      "1.3 Market failure",
+      "1.4 Government intervention"
+    ],
+    "Weeks 16–30": [
+      "2.1 Measures of economic performance",
+      "2.4 National income",
+      "2.2 Aggregate demand (AD)",
+      "2.3 Aggregate supply (AS)",
+      "2.5 Economic growth",
+      "2.6 Macroeconomic objectives and policies"
+    ],
+    "Weeks 31–45": [
+      "3.3 Revenues, costs and profits",
+      "3.1 Business growth",
+      "3.2 Business Objectives",
+      "3.4 Market structures",
+      "3.6 Government intervention",
+      "3.5 Labour market"
+    ]
+  },
+  "A-Level Computer Science (Year 12)": {
+    "Autumn Term 1": [
+      "1.2.4 Types of Programming Language",
+      "1.2.5 Introduction to Programming",
+      "2.1.1 Thinking Abstractly",
+      "2.1.2 Thinking Ahead",
+      "2.1.3 Thinking Procedurally",
+      "Python Ch.1: Getting Started"
+    ],
+    "Autumn Term 2": [
+      "1.4.1 Data Types",
+      "2.1.3 Thinking Procedurally",
+      "2.1.4 Thinking Logically",
+      "NEA: Project Proposal",
+      "NEA: Gantt Chart",
+      "Python Ch.2: What If"
+    ],
+    "Spring Term 1": [
+      "1.4.2 Data Structures",
+      "2.1.5 Thinking Concurrently",
+      "2.2.1 Programming Techniques",
+      "NEA: Review of Product",
+      "Python Ch.3: Loop the Loop"
+    ],
+    "Spring Term 2": [
+      "1.4.2 Data Structures",
+      "2.2.2 Computational Methods",
+      "2.3 Algorithms",
+      "NEA: Review of Product",
+      "Python Ch.3: Loop the Loop"
+    ],
+    "Summer Term 1": [
+      "1.3.2 Databases",
+      "2.3 Algorithms",
+      "NEA: Review of Product",
+      "Python Ch.4: Subroutines"
+    ],
+    "Summer Term 2": [
+      "1.3.2 Databases",
+      "1.3.4 Web Technologies",
+      "1.4.3 Boolean Algebra",
+      "NEA: Review of Product",
+      "NEA: Completion of Product",
+      "Python Ch.5: Data Structures"
+    ]
+  },
+  "A-Level Computer Science (Year 13)": {
+    "Autumn Term 1": [
+      "1.1.1 Structure and Function of the Processor",
+      "1.2.2 Applications Generation",
+      "1.3.1 Compression, Encryption and Hashing",
+      "1.3.3 Networks",
+      "NEA: Completion of 3.3 Developing the Coded Solution"
+    ],
+    "Autumn Term 2": [
+      "1.1.1 Structure and Function of the Processor",
+      "1.1.2 Types of Processor",
+      "1.2.3 Software Development",
+      "NEA: 3.2 Design of the Solution (Oct)",
+      "NEA: 3.1 Analysis of the Problem (Nov)",
+      "NEA: 3.4 Evaluation (Dec)"
+    ],
+    "Spring Term 1": [
+      "1.2.1 Systems Software",
+      "1.1.3 Input, Output and Storage",
+      "1.5 Legal, Moral, Cultural and Ethical Issues",
+      "NEA: Final Hand-in of Project"
+    ]
+  }
+};
+const KEY="alevelMistakesTrackerData_v2"; const NAMES=Object.keys(SUBJECTS);
+let activeView="home", activeSubject=NAMES[0], activeSection="topic", search="", data, chart, sx=0,sy=0;
+const id=p=>p+"_"+Date.now()+"_"+Math.random().toString(36).slice(2,8);
+const emptyAttempt=()=>({id:id("a"),raw:"",total:"",percent:""});
+const topic=n=>({id:id("t"),name:n,source:"",needsReview:false,notes:"",attempts:[emptyAttempt(),emptyAttempt(),emptyAttempt()]});
+function initial(){const d={};NAMES.forEach(s=>{d[s]={topicGroups:Object.fromEntries(Object.entries(SUBJECTS[s]).map(([b,ts])=>[b,ts.map(topic)])),examPapers:[],pipsPapers:[]}});return d}
+function norm(d){const b=initial();NAMES.forEach(s=>{if(!d?.[s])return;const x=d[s];Object.keys(b[s].topicGroups).forEach(k=>{if(Array.isArray(x.topicGroups?.[k]))b[s].topicGroups[k]=x.topicGroups[k].map(t=>({id:t.id||id("t"),name:t.name||"",source:t.source||"",needsReview:!!t.needsReview,notes:t.notes||"",attempts:t.attempts?.length?t.attempts.map(a=>({id:a.id||id("a"),raw:a.raw??"",total:a.total??"",percent:a.percent??""})):[emptyAttempt(),emptyAttempt(),emptyAttempt()]}))});b[s].examPapers=(x.examPapers||[]).map(p=>({id:p.id||id("e"),year:p.year||"",paperName:p.paperName||"",notes:p.notes||"",attempts:p.attempts?.length?p.attempts.map(a=>({id:a.id||id("a"),raw:a.raw??"",total:a.total??"",percent:a.percent??""})):[emptyAttempt(),emptyAttempt(),emptyAttempt()]}));b[s].pipsPapers=(x.pipsPapers||[]).map(p=>({id:p.id||id("p"),examPaperName:p.examPaperName||"",overall:{id:p.overall?.id||id("a"),raw:p.overall?.raw??"",total:p.overall?.total??"",percent:p.overall?.percent??""},improvementsMade:!!p.improvementsMade,notes:p.notes||"",topicBreakdown:(p.topicBreakdown||[]).map(q=>({id:q.id||id("pt"),topic:q.topic||"",score:{id:q.score?.id||id("a"),raw:q.score?.raw??"",total:q.score?.total??"",percent:q.score?.percent??""}}))}))});return b}
+function save(){localStorage.setItem(KEY,JSON.stringify(data))} function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+function pct(a){if(!a)return null;if(a.percent!==""&&a.percent!=null&&isFinite(Number(a.percent)))return Number(a.percent);if(a.raw!==""&&a.total!==""&&Number(a.total)>0)return Number(a.raw)/Number(a.total)*100;return null}
+function parse(v){v=String(v||"").trim();if(!v)return null;if(v.includes("/")){let p=v.split("/").map(x=>parseFloat(x.trim()));if(p.length===2&&isFinite(p[0])&&isFinite(p[1])&&p[1]>0)return {raw:p[0],total:p[1],percent:Math.max(0,Math.min(100,p[0]/p[1]*100))}}let n=parseFloat(v.replace("%",""));return isFinite(n)?{raw:"",total:"",percent:Math.max(0,Math.min(100,n))}:null}
+function cls(n){if(n==null)return"empty";return n<50?"red":n<80?"orange":n<90?"green":n<100?"dark":"gold"}function fp(n){return n==null?"—":(Math.round(n*10)/10)+"%"}function badge(n){return `<span class="score ${cls(n)}">${fp(n)}</span>`}
+function topics(s){return Object.values(data[s].topicGroups).flat()} function scores(s){let r=[];topics(s).forEach(t=>t.attempts.forEach(a=>{let n=pct(a);if(n!=null)r.push(n)}));data[s].examPapers.forEach(p=>p.attempts.forEach(a=>{let n=pct(a);if(n!=null)r.push(n)}));return r}function avg(a){return a.length?a.reduce((x,y)=>x+y,0)/a.length:null}
+function weak(s){return topics(s).map(t=>({t,n:t.attempts.filter(a=>{let x=pct(a);return x!=null&&x<50}).length})).filter(x=>x.n).sort((a,b)=>b.n-a.n).slice(0,8)}
+function scoreInput(s,type,item,aid,a){let v=a.raw!==""&&a.total!==""?a.raw+"/"+a.total:(a.percent??"");return `<div class="flex flex-col gap-2"><input class="input scoreEntry min-w-[115px]" inputmode="decimal" value="${esc(v)}" placeholder="17/20 or 85%" data-s="${esc(s)}" data-type="${type}" data-item="${item}" data-aid="${aid}">${badge(pct(a))}</div>`}
+function header(){return `<header class="sticky top-0 z-40 border-b border-white/70 bg-[#f8f7fc]/90 backdrop-blur-xl"><div class="mx-auto max-w-[1700px] px-4 py-4"><div class="mb-3 flex flex-wrap items-center justify-between gap-3"><button onclick="home()" class="text-left"><h1 class="text-2xl font-black">A-Level Mistakes Tracker</h1><p class="text-sm text-slate-500">Find the pattern. Fix the gap.</p></button><div class="flex gap-2"><button onclick="exportData()" class="rounded-xl bg-white px-3 py-2 text-sm font-bold">↓ Export</button><button onclick="importData()" class="rounded-xl bg-white px-3 py-2 text-sm font-bold">↑ Import</button><button onclick="resetData()" class="rounded-xl bg-rose-50 px-3 py-2 text-sm font-bold text-rose-500">↺ Reset</button></div></div><div class="flex flex-col gap-2 lg:flex-row"><button onclick="home()" class="rounded-2xl px-4 py-2.5 text-sm font-bold ${activeView==="home"?"bg-[#7c6ee6] text-white":"bg-white"}">⌂ Home</button><div class="flex flex-1 gap-2 overflow-x-auto rounded-2xl bg-white/50 p-1">${NAMES.map(s=>`<button onclick="openSub('${esc(s)}')" class="tab shrink-0 rounded-2xl px-4 py-2.5 text-sm font-semibold text-slate-600 ${activeView==="subject"&&activeSubject===s?"active":""}">${esc(s.replace("A-Level ",""))}</button>`).join("")}</div><input id="search" class="input min-w-[220px]" placeholder="Search topics, papers or notes..." value="${esc(search)}"></div></div></header>`}
+function stat(label,value){return `<div class="rounded-3xl bg-white/75 p-4"><div class="text-sm text-slate-500">${label}</div><div class="mt-2 text-2xl font-black">${value}</div></div>`}
+function homePage(){let all=NAMES.flatMap(scores), review=NAMES.reduce((n,s)=>n+topics(s).filter(t=>t.needsReview).length,0);return `<main class="mx-auto max-w-[1700px] px-4 py-6"><section class="card rounded-[2rem] p-6"><span class="rounded-full bg-purple-100 px-3 py-1 text-xs font-bold text-purple-700">OVERALL DASHBOARD</span><h2 class="mt-4 text-3xl font-black">Your revision, with a memory.</h2><div class="summary mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">${stat("Attempts logged",all.length)}${stat("Overall average",fp(avg(all)))}${stat("Red attempts",all.filter(x=>x<50).length)}${stat("Needs review",review)}</div></section><h2 class="mt-7 text-xl font-black">Your subjects</h2><div class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">${NAMES.map(s=>{let sc=scores(s),w=weak(s);return `<button onclick="openSub('${esc(s)}')" class="card rounded-3xl p-5 text-left"><div class="flex justify-between gap-3"><div><h3 class="font-bold">${esc(s)}</h3><p class="text-sm text-slate-500">${topics(s).length} topic cards</p></div><span class="text-purple-600">Open →</span></div><div class="mt-4 grid grid-cols-2 gap-3">${stat("Average",fp(avg(sc)))}${stat("Attempts",sc.length)}</div><p class="mt-4 text-sm font-semibold ${w.length?"text-rose-500":"text-emerald-600"}">${w.length?"Priority: "+esc(w[0].t.name):"No sub-50% attempts yet"}</p></button>`}).join("")}</div></main>`}
+function subjectDash(s){let sc=scores(s),w=weak(s),d=[sc.filter(x=>x<50).length,sc.filter(x=>x>=50&&x<80).length,sc.filter(x=>x>=80&&x<90).length,sc.filter(x=>x>=90&&x<100).length,sc.filter(x=>x===100).length];return `<section class="card rounded-[2rem] p-5 sm:p-7"><div class="grid gap-5 xl:grid-cols-[1fr_360px]"><div><span class="rounded-full bg-purple-100 px-3 py-1 text-xs font-bold text-purple-700">SUBJECT DASHBOARD</span><h2 class="mt-3 text-2xl font-black">${esc(s)}</h2><div class="summary mt-5 grid gap-3 sm:grid-cols-3">${stat("Topics logged",topics(s).filter(t=>t.attempts.some(a=>pct(a)!=null)).length)}${stat("Average",fp(avg(sc)))}${stat("Attempts",sc.length)}</div></div><div class="rounded-3xl bg-white/70 p-4"><div class="text-sm font-bold">Score distribution</div><div class="relative h-48"><canvas id="chart"></canvas></div></div></div><div class="mt-6 rounded-3xl bg-rose-50/70 p-4"><h3 class="font-bold">Priority queue</h3><div class="mt-3 flex flex-wrap gap-2">${w.length?w.map(x=>`<button onclick="document.getElementById('${x.t.id}').scrollIntoView({behavior:'smooth',block:'center'})" class="rounded-full bg-white px-3 py-2 text-sm font-semibold">${esc(x.t.name)} <span class="text-rose-500">× ${x.n}</span></button>`).join(""):`<span class="text-sm text-emerald-600">Nothing in the red zone yet.</span>`}</div></div></section>`}
+function topicCard(s,t){return `<article id="${t.id}" class="rounded-3xl border border-slate-100 bg-white/80 p-4"><div class="flex flex-wrap items-center gap-2"><h4 class="text-lg font-black">${esc(t.name)}</h4>${t.needsReview?`<span class="rounded-full bg-rose-50 px-3 py-1 text-xs font-bold text-rose-500">NEEDS REVIEW</span>`:""}</div><div class="mt-3 grid gap-3 md:grid-cols-[1fr_auto]"><input class="input" placeholder="Source website, e.g. PMT" value="${esc(t.source)}" onchange="topicField('${esc(s)}','${t.id}','source',this.value)"><button onclick="review('${esc(s)}','${t.id}')" class="rounded-2xl px-4 py-3 text-sm font-bold ${t.needsReview?"bg-rose-100 text-rose-600":"bg-slate-100"}">${t.needsReview?"✓ Needs review":"Mark needs review"}</button></div><div class="scroll mt-4"><table><thead><tr><th>Source</th><th>Topic</th>${t.attempts.map((a,i)=>`<th>${i===0?"First Attempt":i===1?"Second Attempt":i===2?"Third Attempt":"Attempt "+(i+1)}</th>`).join("")}<th>Actions</th></tr></thead><tbody><tr><td>${esc(t.source||"Source")}</td><td class="font-bold">${esc(t.name)}</td>${t.attempts.map(a=>`<td>${scoreInput(s,"topic",t.id,a.id,a)}</td>`).join("")}<td><button onclick="addAttempt('${esc(s)}','topic','${t.id}')" class="rounded-xl bg-purple-100 px-3 py-2 text-xs font-bold text-purple-700">+ Attempt</button></td></tr></tbody></table></div><textarea class="input mt-3 min-h-[90px]" placeholder="What specifically went wrong?" onchange="topicField('${esc(s)}','${t.id}','notes',this.value)">${esc(t.notes)}</textarea></article>`}
+function topicPage(s){let blocks=Object.entries(data[s].topicGroups).map(([b,ts])=>{let q=ts.filter(t=>!search||[t.name,t.source,t.notes,t.needsReview?"needs review":""].join(" ").toLowerCase().includes(search.toLowerCase()));if(!q.length)return"";return `<section class="card mb-5 rounded-3xl p-4"><details open><summary class="cursor-pointer font-bold">${esc(b)} <span class="text-sm font-normal text-slate-500">(${q.length} topics)</span></summary><div class="mt-4 grid gap-4">${q.map(t=>topicCard(s,t)).join("")}</div></details></section>`}).join("");return `<div class="mb-5"><h3 class="text-xl font-black">Topic papers</h3><p class="text-sm text-slate-500">Enter scores as percentages or raw marks such as 17/20.</p></div>${blocks||"<p>No matching topics.</p>"}`}
+function examCard(s,p){return `<article class="card rounded-3xl p-4"><div class="grid gap-3 md:grid-cols-[180px_1fr_auto]"><input class="input font-bold" placeholder="Year, e.g. 2023" value="${esc(p.year)}" onchange="examField('${esc(s)}','${p.id}','year',this.value)"><input class="input font-bold" placeholder="Paper name" value="${esc(p.paperName)}" onchange="examField('${esc(s)}','${p.id}','paperName',this.value)"><button onclick="delExam('${esc(s)}','${p.id}')" class="rounded-2xl bg-rose-50 px-4 py-3 font-bold text-rose-500">Delete</button></div><div class="scroll mt-4"><table><thead><tr><th>Year</th><th>Paper</th>${p.attempts.map((a,i)=>`<th>${i===0?"Score":"Attempt "+(i+1)+" Score"}</th>`).join("")}<th>Actions</th></tr></thead><tbody><tr><td>${esc(p.year||"Year")}</td><td>${esc(p.paperName||"Paper")}</td>${p.attempts.map(a=>`<td>${scoreInput(s,"exam",p.id,a.id,a)}</td>`).join("")}<td><button onclick="addAttempt('${esc(s)}','exam','${p.id}')" class="rounded-xl bg-purple-100 px-3 py-2 text-xs font-bold text-purple-700">+ Attempt</button></td></tr></tbody></table></div><textarea class="input mt-3 min-h-[90px]" placeholder="What went wrong?" onchange="examField('${esc(s)}','${p.id}','notes',this.value)">${esc(p.notes)}</textarea></article>`}
+function examPage(s){let ps=data[s].examPapers.filter(p=>!search||[p.year,p.paperName,p.notes].join(" ").toLowerCase().includes(search.toLowerCase()));return `<div class="mb-5 flex flex-wrap items-center justify-between gap-3"><div><h3 class="text-xl font-black">Exam papers</h3><p class="text-sm text-slate-500">Full past papers with unlimited re-attempts.</p></div><button onclick="addExam('${esc(s)}')" class="rounded-2xl bg-[#7c6ee6] px-4 py-3 font-bold text-white">+ Add exam paper</button></div><div class="grid gap-4">${ps.length?ps.map(p=>examCard(s,p)).join(""):`<div class="card rounded-3xl p-8 text-center">No exam papers here yet.</div>`}</div>`}
+function pipsCard(s,p){return `<article class="card rounded-3xl p-4"><div class="grid gap-4 lg:grid-cols-[1fr_190px_auto]"><div><label class="text-xs font-bold uppercase text-slate-500">Exam paper name</label><input class="input mt-2 font-bold" placeholder="e.g. PIPS Paper 3 June 2025" value="${esc(p.examPaperName)}" onchange="pipsField('${esc(s)}','${p.id}','examPaperName',this.value)"></div><div><label class="text-xs font-bold uppercase text-slate-500">Overall score</label><div class="mt-2">${scoreInput(s,"pipsOverall",p.id,p.overall.id,p.overall)}</div></div><button onclick="delPips('${esc(s)}','${p.id}')" class="rounded-2xl bg-rose-50 px-4 py-3 font-bold text-rose-500">Delete</button></div><label class="mt-4 flex items-center gap-3 rounded-2xl bg-white/70 p-3"><input type="checkbox" class="h-5 w-5 accent-purple-600" ${p.improvementsMade?"checked":""} onchange="improve('${esc(s)}','${p.id}',this.checked)"><span class="font-bold">Improvements made?</span>${badge(pct(p.overall))}</label><div class="mt-5"><div class="mb-3 flex items-center justify-between"><div><h4 class="font-black">Topic breakdown</h4><p class="text-sm text-slate-500">Add every topic tested.</p></div><button onclick="addPipsTopic('${esc(s)}','${p.id}')" class="rounded-xl bg-purple-100 px-3 py-2 font-bold text-purple-700">+ Topic</button></div><div class="scroll"><table><thead><tr><th>Topic tested</th><th>Score</th><th>Remove</th></tr></thead><tbody>${p.topicBreakdown.length?p.topicBreakdown.map(q=>`<tr><td><input class="input" value="${esc(q.topic)}" placeholder="Topic name" onchange="pipsTopic('${esc(s)}','${p.id}','${q.id}','topic',this.value)"></td><td>${scoreInput(s,"pipsTopic",p.id+"::"+q.id,q.score.id,q.score)}</td><td><button onclick="delPipsTopic('${esc(s)}','${p.id}','${q.id}')" class="rounded-xl bg-rose-50 px-3 py-2 font-bold text-rose-500">Remove</button></td></tr>`).join(""):`<tr><td colspan="3" class="text-center text-slate-500">No topic breakdown yet.</td></tr>`}</tbody></table></div></div><textarea class="input mt-4 min-h-[90px]" placeholder="Notes on mistakes and improvements..." onchange="pipsField('${esc(s)}','${p.id}','notes',this.value)">${esc(p.notes)}</textarea></article>`}
+function pipsPage(s){let ps=data[s].pipsPapers.filter(p=>!search||[p.examPaperName,p.notes,...p.topicBreakdown.map(q=>q.topic)].join(" ").toLowerCase().includes(search.toLowerCase()));return `<div class="mb-5 flex flex-wrap items-center justify-between gap-3"><div><h3 class="text-xl font-black">PIPS mistakes</h3><p class="text-sm text-slate-500">Paper-level mistakes broken down topic by topic.</p></div><button onclick="addPips('${esc(s)}')" class="rounded-2xl bg-[#7c6ee6] px-4 py-3 font-bold text-white">+ Add PIPS paper</button></div><div class="grid gap-4">${ps.length?ps.map(p=>pipsCard(s,p)).join(""):`<div class="card rounded-3xl p-8 text-center">No PIPS papers logged.</div>`}</div>`}
+function subjectPage(s){return `<main class="mx-auto max-w-[1700px] px-4 py-6">${subjectDash(s)}<div class="mt-6 flex flex-wrap gap-2 rounded-3xl bg-white/50 p-2">${["topic","exam","pips"].map(x=>`<button onclick="activeSection='${x}';render()" class="rounded-2xl px-4 py-3 font-bold ${activeSection===x?"bg-white text-purple-700 shadow":"text-slate-500"}">${x==="topic"?"Topic Papers":x==="exam"?"Exam Papers":"PIPS Mistakes"}</button>`).join("")}</div><section class="mt-5">${activeSection==="topic"?topicPage(s):activeSection==="exam"?examPage(s):pipsPage(s)}</section></main>`}
+function render(){document.getElementById("app").innerHTML=header()+(activeView==="home"?homePage():subjectPage(activeSubject));let se=document.getElementById("search");se.oninput=e=>{search=e.target.value;render();document.getElementById("search").focus()};if(activeView==="subject")drawChart()}
+function drawChart(){if(chart)chart.destroy();let c=document.getElementById("chart");if(!c)return;let a=scores(activeSubject);chart=new Chart(c,{type:"doughnut",data:{labels:["Red <50","Orange 50–79","Green 80–89","Dark green 90–99","Gold 100"],datasets:[{data:[a.filter(x=>x<50).length,a.filter(x=>x>=50&&x<80).length,a.filter(x=>x>=80&&x<90).length,a.filter(x=>x>=90&&x<100).length,a.filter(x=>x===100).length],backgroundColor:["#e57373bb","#f3a65abb","#70b98bbb","#3f8a61bb","#d5a72fcc"],borderColor:"#fff",borderWidth:3}]},options:{responsive:true,maintainAspectRatio:false,cutout:"62%",plugins:{legend:{position:"bottom"}}}})}
+function home(){activeView="home";search="";render();scrollTo({top:0,behavior:"smooth"})}function openSub(s){activeSubject=s;activeView="subject";activeSection="topic";search="";render();scrollTo({top:0,behavior:"smooth"})}function findTopic(s,i){return topics(s).find(t=>t.id===i)}function topicField(s,i,f,v){findTopic(s,i)[f]=v;save()}function review(s,i){let t=findTopic(s,i);t.needsReview=!t.needsReview;save();render()}function addAttempt(s,type,i){if(type==="topic")findTopic(s,i).attempts.push(emptyAttempt());else data[s].examPapers.find(p=>p.id===i).attempts.push(emptyAttempt());save();render()}function addExam(s){data[s].examPapers.push({id:id("e"),year:"",paperName:"",notes:"",attempts:[emptyAttempt(),emptyAttempt(),emptyAttempt()]});save();render()}function examField(s,i,f,v){data[s].examPapers.find(p=>p.id===i)[f]=v;save()}function delExam(s,i){if(confirm("Delete this exam paper?")){data[s].examPapers=data[s].examPapers.filter(p=>p.id!==i);save();render()}}function getPips(s,i){return data[s].pipsPapers.find(p=>p.id===i)}function addPips(s){data[s].pipsPapers.push({id:id("p"),examPaperName:"",overall:emptyAttempt(),improvementsMade:false,notes:"",topicBreakdown:[]});save();render()}function pipsField(s,i,f,v){getPips(s,i)[f]=v;save()}function improve(s,i,v){getPips(s,i).improvementsMade=v;save();render()}function delPips(s,i){if(confirm("Delete this PIPS paper?")){data[s].pipsPapers=data[s].pipsPapers.filter(p=>p.id!==i);save();render()}}function addPipsTopic(s,i){getPips(s,i).topicBreakdown.push({id:id("pt"),topic:"",score:emptyAttempt()});save();render()}function pipsTopic(s,p,q,f,v){getPips(s,p).topicBreakdown.find(x=>x.id===q)[f]=v;save()}function delPipsTopic(s,p,q){getPips(s,p).topicBreakdown=getPips(s,p).topicBreakdown.filter(x=>x.id!==q);save();render()}
+document.addEventListener("change",e=>{if(!e.target.classList.contains("scoreEntry"))return;let x=e.target,p=parse(x.value),a=null,s=x.dataset.s;if(x.dataset.type==="topic")a=findTopic(s,x.dataset.item).attempts.find(z=>z.id===x.dataset.aid);if(x.dataset.type==="exam")a=data[s].examPapers.find(z=>z.id===x.dataset.item).attempts.find(z=>z.id===x.dataset.aid);if(x.dataset.type==="pipsOverall")a=getPips(s,x.dataset.item).overall;if(x.dataset.type==="pipsTopic"){let [p,q]=x.dataset.item.split("::");a=getPips(s,p).topicBreakdown.find(z=>z.id===q).score}if(!p&&x.value.trim()){alert("Use a percentage or marks like 17/20.");return}Object.assign(a,p||{raw:"",total:"",percent:""});save();render()})
+function exportData(){let b=new Blob([JSON.stringify({app:"A-Level Mistakes Tracker",version:2,exportedAt:new Date().toISOString(),data},null,2)],{type:"application/json"}),u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download="alevel-mistakes-tracker-backup-"+new Date().toISOString().slice(0,10)+".json";a.click();URL.revokeObjectURL(u)}function importData(){document.getElementById("importInput").click()}document.getElementById("importInput").onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{if(confirm("Importing replaces current data. Continue?")){let x=JSON.parse(r.result);data=norm(x.data||x);save();render()}}catch{alert("Could not import that JSON file.")}};r.readAsText(f)};function resetData(){if(confirm("Reset the entire tracker? Export first if you want a backup.")){data=initial();save();home()}}
+document.addEventListener("touchstart",e=>{if(e.touches.length===1){sx=e.touches[0].clientX;sy=e.touches[0].clientY}},{passive:true});document.addEventListener("touchend",e=>{let t=e.changedTouches[0],dx=t.clientX-sx,dy=t.clientY-sy;if(activeView==="subject"&&Math.abs(dx)>90&&Math.abs(dx)>Math.abs(dy)){let i=NAMES.indexOf(activeSubject),n=dx<0?i+1:i-1;if(n>=0&&n<NAMES.length){activeSubject=NAMES[n];search="";render();scrollTo({top:0,behavior:"smooth"})}}sx=sy=0},{passive:true});
+if("serviceWorker"in navigator)addEventListener("load",()=>navigator.serviceWorker.register("./sw.js"));data=(()=>{try{let x=localStorage.getItem(KEY);return x?norm(JSON.parse(x)):initial()}catch{return initial()}})();render();
+</script>
+</body>
+</html>
